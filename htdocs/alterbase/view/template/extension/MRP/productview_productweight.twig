@@ -1,0 +1,40 @@
+<div class="panel panel-default">
+	<a data-toggle="collapse" data-parent="#stataccordion" href="#prod_stat_productweight">
+		<div class="panel-heading">
+			<h3 class="panel-title">
+				<i class="fas {{heading_icon}}"></i>&nbsp;{{ heading_title }}
+			</h3>
+		</div>
+	</a>
+	<div id="prod_stat_productweight" class="panel-collapse collapse">
+		<div class="panel-body">
+			<table class="table table-bordered">
+				<thead>
+					<tr>
+						{% for col in dtable.cols %}
+							<th>{{col.header|replace({'_': ' '})}}</th>
+						{% endfor %}
+					</tr>
+				</thead>
+				<tbody>
+					{% for item in dtable.rows %}
+						<tr>
+							{% for col in dtable.cols %}
+								<td>{{item[col.datapath]}}</div></td>
+							{% endfor %}
+						</tr>
+					{% endfor %}
+				</tbody>
+				<tfoot>
+					<tr>
+						{% for col in dtable.cols %}
+							<th>{{col.footer|replace({'_': ' '})}}</th>
+						{% endfor %}
+					</tr>
+				</tfoot>
+			</table>
+		</div>
+	</div>
+</div>
+
+

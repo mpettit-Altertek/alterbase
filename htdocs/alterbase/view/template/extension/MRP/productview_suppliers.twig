@@ -1,0 +1,126 @@
+
+<div class="panel panel-default">
+	<a data-toggle="collapse" data-parent="#prodaccordion" href="#prod_suppliers">
+		<div class="panel-heading">
+			<h3 class="panel-title">
+				<i class="fa fa-store"></i>&nbsp;{{ text_supplier }}</h3>
+			</h3>
+		</div>
+	</a>
+	<div id="prod_suppliers" class="panel-collapse collapse">
+		<div class="panel-body">
+			<style>
+				.ui-widget button{
+					font-size: 13px;
+				}
+				#tbl_suppedit td,#tbl_suppedit th{
+					padding: 1px 1px 1px 6px;
+				}
+				.list-template{
+					display:none;
+				}
+			</style>
+			<form action="{{action_suppliers}}" method="post" enctype="multipart/form-data" id="form-suppliers" class="form-horizontal">
+							<input type="hidden" name="id" value="{{ id }}"/>
+							<input type="hidden" name="rev" value="{{ rev }}"/>
+				<div class="control-group">
+					
+					<div class="editactionbutton">
+						<div class="pull-right">
+							<input type="submit" data-toggle="tooltip" title="<i class='fa fa-save'></i>{{ button_save }}" class="btn btn-primary"></input>
+						</div>
+						<br>
+					</div>
+					
+					<div id="suppedit" class="dynamiclist">
+						<table id="tbl_suppedit">
+							<tr>
+								<th>{{text_supplier}}</th>
+								{% for col in suppfields %}
+									<th>
+										{{col.name|replace({'_': ' '})}}
+									</th>
+								{% endfor %}
+							</tr>
+							{% for ix in (-1)..((suppliers|length)-1) %}
+								{% set key = ((ix==(-1))?'#':ix) %}
+								<tr class="{{ (ix==(-1))?'list-template':'list-item'}}">
+									<td>
+										<input name="suppliers[{{ key }}][supplier_id]" type="hidden" value="{{ suppliers[key] ? suppliers[key].supplier_id }}">
+										<input name="suppliers[{{ key }}][supplier_name]" type="text" placeholder="{{ entry_field }}" id="input-suppliers[{{ key }}][supplier_name]" value="{{ suppliers[key] ? suppliers[key].name }}" class="form-control supplier" style="display:inline-block;    width: 160;" forced_readonly={{ (ix!=(-1))?'True':'False' }}>
+									</td>
+									{% for field in suppfields %}
+										<td>
+											{% if field.type == 1 %}
+												<div class="input-group">
+													<textarea name="suppliers[{{ key }}][{{field.name}}]" placeholder="{{ entry_field }}" id="input-suppliers[{{ key }}][{{field.name}}]" class="form-control fitY fitX" forced_readonly={{field.readonly?'True':'False'}}>{{ suppliers[key] ? suppliers[key][field.name] }}</textarea>
+													
+													<span class="input-group-btn">
+														<button class="btn btn-primary copytext" type="button"  for="input-suppliers[{{ key }}][{{field.name}}]">Copy</button>
+													</span>
+												</div>
+											{% elseif field.type == 2 %}
+												<input type="number" name="suppliers[{{ key }}][{{field.name}}]" id="input-suppliers[{{ key }}][{{field.name}}]" class="form-control" value="{{ suppliers[key] ? suppliers[key][field.name] }}" forced_readonly={{field.readonly?'True':'False'}}/>
+											{% elseif field.type == 3 %}
+												<select  name="suppliers[{{ key }}][{{field.name}}]" id="input-{{ field.name }}" class="form-control" forced_readonly={{field.readonly?'True':'False'}}>
+													{% for k,v in field.options %}
+														{% if k == suppliers[key][field.name] %}
+															<option value="{{k}}" selected >{{v}}</option>
+														{% else %}
+															<option value="{{k}}" >{{v}}</option>
+														{% endif %}
+													{% endfor %}
+												</select>
+											{% elseif field.type == 4 %}
+												<input type="text" name="suppliers[{{ key }}][{{field.name}}]" id="input-suppliers[{{ key }}][{{field.name}}]" class="form-control datepicker" value="{{ suppliers[key] ? suppliers[key][field.name] }}" forced_readonly={{field.readonly?'True':'False'}}/>
+											
+											{% elseif field.type == 5 %}
+												<input type="text" name="suppliers[{{ key }}][{{field.name}}]" id="input-suppliers[{{ key }}][{{field.name}}]" class="form-control masked" data-inputmask-regex="£[0-9]{1,}\.[0-9]{2,}" value="{{ suppliers[key] ? suppliers[key][field.name] }}" forced_readonly={{field.readonly?'True':'False'}}/>
+											{% endif %}
+										</td>
+									{% endfor %}
+									<td class="editactionbutton">
+										<input type="checkbox" name="suppliers[{{ key }}][remove]" value="{{ suppliers[key] ? suppliers[key].id }}">{{ entry_remove }}<br>
+									</td>
+								<tr>
+							{% endfor %}
+							<tr class="editactionbutton">
+								<td style="height:36px">
+									<a href="#" class="list-add btn btn-primary">{{ entry_add }}</a>
+								</td>
+							</tr>
+						</table>
+					</div>
+				</div>
+			</form>
+			<script>
+				$(function () {
+					function startsuppliersearch(){
+						$(".supplier" ).autocomplete({
+							autoFocus: true,
+							source: decodeURIComponent("{{searchurlsupplier}}"),
+							minLength: 2,
+						});
+						$('input, select, textarea').on('change', function() {
+							$(this).addClass('changed');
+						});
+					}
+					startsuppliersearch();
+					$(".dynamiclist").dynamiclist({
+						addCallbackFn: function(){
+							console.log('added line');
+							startsuppliersearch();
+							
+						}
+					});
+					$(".copytext").click(function(){
+						var sel = $.escapeSelector($( this ).attr("for"));
+						console.log('#'+sel);
+						$('#'+sel).select();
+						document.execCommand('copy');
+					});
+				});
+			</script>
+		</div>
+	</div>
+</div>

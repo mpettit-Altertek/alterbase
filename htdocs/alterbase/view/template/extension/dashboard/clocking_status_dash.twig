@@ -1,0 +1,84 @@
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<h3 class="panel-title">
+			<i class="fa fa-server"></i> {{ heading_title }}
+		</h3>
+	</div>
+	<style>
+		#statuses .left {
+			border-radius: 27.5px 0px 0px 27.5px;
+			padding: 0px;
+			padding-right:5px;
+			border-left: 1px solid #000000;
+			border-top: 1px solid #000000;
+			border-bottom: 1px solid #000000;
+		}
+		#statuses .center {
+			padding: 0px;
+			border-top: 1px solid #000000;
+			border-bottom: 1px solid #000000;
+		}
+		#statuses .right {
+			border-radius: 0px 27.5px 27.5px 0px;
+			padding: 0px;
+			border-right: 1px solid #000000;
+			border-top: 1px solid #000000;
+			border-bottom: 1px solid #000000;
+		}
+		#statuses table th {
+			padding-left:5px;
+			padding-right:5px;
+			text-align: right;
+		}
+		#statuses table td {
+			padding-left:5px;
+			padding-right:5px;
+		}
+		
+	</style>
+	
+	<script>
+		$( window ).resize(function() {
+			var w = $('#statuses').width();
+			if(w<340){
+				$('#statuses .tohide').hide();
+			}else{
+				$('#statuses .tohide').show();
+			}
+		});
+	</script>
+	<div class="panel-body">
+		<div class="row">
+			<table id="statuses" style="width: 100%; border-collapse: separate; border-spacing: 0px 5px;">
+				{% for user in usersCurrentStatus %}
+					<tr>
+						<td class="left" style="{{user.style}}">
+							<img src="{{ user.image }}" alt="{{ user.firstname }} {{ user.lastname }}" class="img-circle" />
+						</td>
+						<td class="center" style="{{user.style}}">
+							{{ user.firstname }} {{ user.lastname }}
+						</td>
+						<td class="center tohide" style="{{user.style}}">
+							<table style="font-size: 10px;">
+								{% for time in user.times %}
+									<tr>
+										<th>{{time.name}}</th>
+										<td>{{time.length}}</td>
+										<td>
+											{% if time.running %}
+												<img  src="view/image/timer.gif" style="height: 15px;"/>
+											{% endif %}
+										</td>
+									</tr>
+								{% endfor %}
+							</table>
+						</td>
+						<td class="right" style="{{user.style}}">
+							{{ user.state }}
+						</td>
+					</tr>
+				{% endfor %}
+			</table>
+		</div>
+	</div>
+</div>

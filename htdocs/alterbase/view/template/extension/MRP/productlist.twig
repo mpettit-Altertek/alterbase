@@ -1,0 +1,153 @@
+{{ header }}{{ column_left }}
+<div id="content">
+	<style>
+	div.dt-buttons {
+		float: right;
+		margin-left: 5px;
+	}
+	input[type="search"]::-webkit-search-cancel-button {
+		-webkit-appearance: searchfield-cancel-button;
+	}
+
+	</style>
+	<div class="page-header">
+		<div class="container-fluid">
+			<div class="pull-right">
+				<a href="{{ new }}" data-toggle="tooltip" title="{{ button_new }}" class="btn btn-primary"><i class="fa fa-plus"></i></a>
+			</div>
+			<h1><i class="fa {{ heading_icon }}"></i>&nbsp;{{ heading_title }}</h1><br>
+			<ul class="breadcrumb">
+				{% for breadcrumb in breadcrumbs %}
+				<li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+				{% endfor %}
+			</ul>
+		</div>
+	</div>
+	<div class="container-fluid">
+		{% if error_warning %}
+		<div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {{ error_warning }}
+			<button type="button" class="close" data-dismiss="alert">&times;</button>
+		</div>
+		{% endif %}
+		<div class="panel panel-default">
+			<div class="panel-body">
+			
+				<table id="parttable" class="display" style="width:100%">
+					<thead>
+						<tr>
+							<th class="nosearch">{{entry_icon}}</th>
+							<th>{{entry_partno}}</th>
+							<th>{{entry_rev}}</th>
+							<th>{{entry_name}}</th>
+							{% for field in fields %}
+								<th>{{ field.name|replace({'_': ' '}) }}</th>
+							{% endfor %}
+						</tr>
+						<tr class="reduced column_search">
+							<th style="padding: 0px;" class="nosearch"></th>
+							<th style="padding: 0px;"></th>
+							<th style="padding: 0px;"></th>
+							<th style="padding: 0px;"></th>
+							{% for field in fields %}
+								<th style="padding: 0px;"></th>
+							{% endfor %}
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	$(document).ready(function() {
+
+		$('#parttable .column_search th:not(.nosearch)').each( function () {
+			$(this).html( '<input type="search" placeholder="Search"/>' );
+		} );
+		var dtable = $('#parttable').DataTable( {
+			columnDefs: [
+				{	targets: [0],	visible: true,	searchable: false,	orderable: false},
+				{	targets: [3],	visible: true,	width:"100%",	},
+				{	targets: [1,2],	visible: true,	},
+				{	targets: '_all',
+					visible: false,
+					render: function ( data, type, row, meta ) {
+						return '<a	href="{{viewpath}}&id='+row[1]+'&rev='+row[2]+'">'+data+'</a>';
+					},
+				},
+			],
+			order: [[ 1, "asc" ]],
+			language: { searchPlaceholder: "Search All" },
+			search: {regex: true,},
+			dom: 'lBfrtip',
+			buttons: [
+				'colvis',
+				{
+					text: '{{latest_only}}',
+					attr:  {
+						id: 'latest_only',
+					},
+					action: function ( e, dt, node, config ) {
+						$("#latest_only").toggleClass("ui-state-default ui-state-active");
+						dt.ajax.reload();
+					}
+				},
+			],
+			colReorder: true,
+			processing: true,
+			serverSide: true,
+			orderCellsTop: true,
+			fixedHeader: true,
+			responsive: true,
+			stateSave: true,
+			pageLength: 100,
+			lengthMenu: [ [ 10, 50, 100, 200, 500,-1 ], [ 10, 50, 100, 200, 500, "ALL"] ],
+			ajax: {
+				url: "{{ ajax_route }}",
+				data: function ( d ) {
+					d.latest_only = $("#latest_only").hasClass( "ui-state-active" );
+				}
+			},
+		});
+		// Restore state
+		dtable.columns().eq( 0 ).each( function ( colIdx ) {
+			if(dtable.state.loaded()){
+				var colSearch = dtable.state.loaded().columns[colIdx].search;
+				if ( colSearch.search ) {
+					$("#parttable tr.column_search  th:nth-child("+(colIdx+1)+")  input" ).val( colSearch.search );
+				}
+			}
+			$("#parttable tr.column_search > th:nth-child("+(colIdx+1)+") > input[type=search]" )
+				.keypress(function(event) {
+					if (event.keyCode == 13) {
+						dtable.column( $(this).parent().index() ).search(this.value.replace(/;/g, "|"), true, false).draw();
+					}
+				})
+				.focusout(function(event) {
+					dtable.column( $(this).parent().index() ).search(this.value.replace(/;/g, "|"), true, false).draw();
+				})
+		});
+		
+		$('#parttable').on( 'column-visibility.dt', function ( e, settings, column, state ) {
+			dtable.columns().eq( 0 ).each( function ( colIdx ) {
+				if(dtable.state.loaded()){
+					var colSearch = dtable.state.loaded().columns[colIdx].search;
+					if ( colSearch.search ) {
+						$("#parttable tr.column_search  th:nth-child("+(colIdx+1)+")  input" ).val( colSearch.search );
+					}
+				}
+				$("#parttable tr.column_search > th:nth-child("+(colIdx+1)+") > input[type=search]" ).keypress(function(event) {
+					if (event.keyCode == 13) {
+						dtable.column( $(this).parent().index() ).search(this.value.replace(/;/g, "|"), true, false).draw();
+					}
+				});
+			});
+		} );
+		
+		$("#parttable_filter > label > input[type=search]").attr("data-toggle", "tooltip").attr("title", "{{Gsearchre}}");
+		$("#parttable tr.column_search input[type=search]").attr("data-toggle", "tooltip").attr("title", "{{Csearchre}}");
+	});
+</script>
+{{ footer }}
+

@@ -1,0 +1,116 @@
+{{ header }}{{ column_left }}
+<div id="content">
+	<style>
+		textarea {
+			white-space: pre;
+		}
+		.list-template{
+			display:none;
+		}
+	</style>
+	<div class="page-header">
+		<div class="container-fluid">
+			<div class="pull-right">
+				<button type="submit" form="form-module" data-toggle="tooltip" title="{{ button_save }}" class="btn btn-primary"><i class="fa fa-save"></i></button>
+				<a href="{{ cancel }}" data-toggle="tooltip" title="{{ button_cancel }}" class="btn btn-default"><i class="fa fa-reply"></i></a>
+			</div>
+			<h1><i class="fa {{ heading_icon }}"></i>&nbsp;{{ heading_title }}</h1><br>
+			<ul class="breadcrumb">
+				{% for breadcrumb in breadcrumbs %}
+				<li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+				{% endfor %}
+			</ul>
+		</div>
+	</div>
+	<div class="container-fluid">
+		{% if error_warning %}
+			<div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {{ error_warning }}
+				<button type="button" class="close" data-dismiss="alert">&times;</button>
+			</div>
+		{% endif %}
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title"><i class="fa fa-edit"></i> {{ text_edit }}</h3>
+			</div>
+			<div class="panel-body">
+				<form action="{{ action }}" method="post" enctype="multipart/form-data" id="form-module" class="form-horizontal">
+					<div class="form-group">
+						<label class="col-sm-2 control-label" for="input-fields">{{ entry_fields }}</label>
+						<div class="col-sm-10">
+							
+							<div class="control-group">
+								<div id="example2" class="controls">
+									{% for ix in (-1)..((fields|length)-1) %}
+										{% set key = ((ix==(-1))?'#':ix) %}
+										<div class="{{ (ix==(-1))?'list-template':'list-item'}} form-group form-inline">
+											<input name="fields[{{ key }}][name]" type="text" placeholder="{{ entry_field }}" id="input-fields[{{ key }}][name]" value="{{ fields[key] ? fields[key].name }}" class="form-control">
+											<select name="fields[{{ key }}][type]" id="input-fields[{{ key }}][type]" class="form-control" >
+												{% for k,v in types %}
+													{% if k == fields[key].type %}
+														<option value="{{k}}" selected >{{v.name}}</option>
+													{% else %}
+														<option value="{{k}}" >{{v.name}}</option>
+													{% endif %}
+												{% endfor %}
+											</select>
+											<textarea name="fields[{{ key }}][options]" id="input-fields[{{ key }}][options]" class="form-control" >{{ fields[key] ? fields[key].options }}</textarea>
+											<textarea name="fields[{{ key }}][tooltip]" id="input-fields[{{ key }}][tooltip]" class="form-control" >{{ fields[key] ? fields[key].tooltip }}</textarea>
+											<a href="#" class="list-remove btn btn-primary">{{ entry_remove_field }}</a>
+										</div>
+									{% endfor %}
+									
+									<a href="#" class="list-add btn btn-primary">{{ entry_add_field }}</a>
+								</div>
+							</div>
+							
+							
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	(function($) {
+		$(document).ready(function() {
+			function autoresize(textarea) {
+				textarea.style.height = '0px';     //Reset height, so that it not only grows but also shrinks
+				textarea.style.height = (textarea.scrollHeight+10) + 'px';    //Set new height
+				
+				textarea.style.width = '0px';     //Reset width, so that it not only grows but also shrinks
+				textarea.style.width = (textarea.scrollWidth+10) + 'px';    //Set new width
+			}
+			
+			function reapply(){
+			
+				$("select").change(function(){
+					$(this).find("option:selected").each(function(){
+						var optionValue = $(this).attr("value");
+						var options = $.escapeSelector(this.parentNode.nextElementSibling.id);
+						
+						var optionsneeded =[{% for k,v in types %}{% if v.optionsneeded %}"{{k}}",{% endif %}{% endfor %}];
+						if(optionsneeded.includes(optionValue)){
+							$('#'+options).show();
+						} else{
+							$('#'+options).hide();
+						}
+					});
+				}).change();
+				
+				$('textarea').each(function ()	{ autoresize(this);	});
+				$('textarea').keyup(function ()	{ autoresize(this);	});
+			}
+			reapply();
+			$("#example2").dynamiclist({
+				minSize:{{ (fields|length > 0)?fields|length:1 }},
+				addCallbackFn: function(){
+					console.log('added line');
+					reapply();
+				},
+			});
+		});
+		$(".list-remove").hide()
+	})(jQuery);
+</script>
+{{ footer }}

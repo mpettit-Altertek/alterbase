@@ -1,0 +1,225 @@
+{{ header }}{{ column_left }}
+
+<div id="content">
+	<style>
+		.white-popup {
+			position: relative;
+			background: #FFF;
+			width: auto;
+			max-width: 90%;
+			margin: 20px auto;
+		}
+		.white-popup .panel-heading {
+			color: #000000;
+			border-color: #dcdcdc;
+			background: #bfbfbf;
+			text-shadow: 0 -1px 0 rgba(50,50,50,0);
+		}
+	</style>
+	<div class="page-header">
+		<div class="container-fluid">
+			<h1><i class="fa {{ heading_icon }}"></i>&nbsp;{{ heading_title }}</h1><br>
+			<ul class="breadcrumb">
+				{% for breadcrumb in breadcrumbs %}
+				<li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+				{% endfor %}
+			</ul>
+		</div>
+	</div>
+	<div class="container-fluid">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">{{ text_report }}<h3>
+			</div>
+			<div class="panel-body">
+				<form action="#" method="post" enctype="multipart/form-data" id="settings" class="form-horizontal">
+					<div class="form-group form-inline">
+						<label class="col-sm-2 control-label" for="input-root">{{ entry_root }}</label>
+						<div class="col-sm-10 ">
+							<input type="text" name="root" value="" id="input-root" class="form-control partnumber" size="10"/>
+							<select name="rootrev" id="input-rootrev" class="form-control" style="display:inline-block;    width: 160;">
+							</select>
+							<div id="input-root_name"	class="form-control"	disabled></div>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label" for="input-rootqty">{{ entry_qty }}</label>
+						<div class="col-sm-10">
+							<input type="number" name="rootqty" min=1 value="1" id="input-rootqty" class="form-control" disabled/>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label" for="input-root">{{ entry_expansion }}</label>
+						<div class="col-sm-10">
+							<button id="btnSelectAll" disabled title="{{ button_selectall }}" class="btn btn-primary"><i class="far fa-check-square"></i>&nbsp;{{ button_selectall }}</button>
+							<button id="btnSelectNone" disabled title="{{ button_selectnone }}" class="btn btn-primary"><i class="far fa-square"></i>&nbsp;{{ button_selectnone }}</button>
+							<table id="boms-tree" class="treetable">
+								<thead>
+									<tr>
+										<th>{{tbl_partno}}</th>
+										<th>{{tbl_rev}}</th>
+										<th>{{tbl_name}}</th>
+									</tr>
+								</thead>
+								<tbody>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-2 control-label" for="input-levels">&nbsp;</label>
+						<div class="col-sm-10">
+							<button id="btnSubmit" disabled type="submit" title="{{ button_generate }}" class="btn btn-primary"><i class="fas fa-hammer"></i>&nbsp;{{ button_generate }}</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	$(function () {
+		$("#btnSelectAll").click(function (event) {    
+			event.preventDefault();
+			$('input:checkbox').prop('checked',true);
+		});
+		$("#btnSelectNone").click(function (event) {    
+			event.preventDefault();
+			$('input:checkbox').prop('checked',false);
+		});
+		$("#btnSubmit").click(function (event) {    
+			$("#boms-tree").treetable('expandAll');
+		})
+		
+		function partselected(id,rev){
+			path = "{{ajax_boms_route}}&root="+id+"&rootrev="+rev;
+			$.ajax({
+				url: path,
+				success: function(result){
+					$("#boms-tree tbody").html(result);
+					$("#boms-tree").treetable({
+						expandable: true,
+						onNodeInitialized: function () {
+							// Create a checkbox per tree node too:
+							this.nn_cb = $('<input type="checkbox">').click(this, function(e) {
+								$(this).prop('indeterminate', false); // we have set/unset, so no longer indeterminate
+								tt_set_kids(e.data, $(this).is(':checked'));
+								tt_check_parent(e.data.tree[e.data.parentId]);
+							})
+							this.nn_cb.attr('id',	this.id);
+							this.nn_cb.attr('name',	'expand['+this.id+']');
+
+							// if I have a parent, which was checked, I should be checked too!
+							if (this.parentId && this.tree[this.parentId]) {
+								this.nn_cb.attr('checked', this.tree[this.parentId].nn_cb.is(':checked'));
+							}
+
+							// remove the indenter, wrap the label, add back indenter AND CHECKBOX
+							this.treeCell.remove('span.indenter')
+							this.treeCell.wrapInner($('<label>').attr('for', this.id))
+							this.treeCell.prepend(this.indenter, this.nn_cb);
+						}
+					},true);
+
+					function tt_set_kids(tt, checked) {
+						// User has just set/unset a parent. All kids should be updated to match:
+						if (!tt) { return }
+						tt.children.forEach(function (kid) {
+							if (! kid.nn_cb) { return } // has no checkbox, prob not init'd yet
+							kid.nn_cb.prop('checked', checked);
+							tt_set_kids(kid, checked);
+						});
+					}
+
+					function tt_check_parent(tt) {
+						// I have just changed a child. See if this makes parent (and 
+						// grandparents etc) set/unset/indeterminate:
+						if (! tt) { return }
+						var ch = false, un = false;
+						tt.children.forEach(function(kid) {
+							if      (kid.nn_cb.is(':indeterminate')) { ch = un = true }
+							else if (kid.nn_cb.is(':checked'))       { ch      = true }
+							else                                     {      un = true }
+						});
+						// We should be checked if there are NO unchecked (all checked) kids
+						// We should be indeterminate if there are checked+unchecked kids:
+						//tt.nn_cb.prop('checked', !un).prop('indeterminate', ch && un);
+						tt.nn_cb.prop('checked', ch);
+						tt_check_parent(tt.tree[tt.parentId]);
+					}
+
+					//---------------------------------------------------------------------------------
+					$("#input-rootqty").attr("disabled", false);
+					$("#btnSelectAll").attr("disabled", false);
+					$("#btnSelectNone").attr("disabled", false);
+					$("#btnSubmit").attr("disabled", false);
+				},
+			});
+		}
+		
+		
+		$('#input-rootrev').change(function (e) {
+			partselected($("#input-root").val(),$("#input-rootrev").val());
+		});
+		
+		$(".partnumber" ).autocomplete({
+			source: decodeURIComponent("{{searchproducturl}}"),
+			minLength: 2,
+			autoFocus: true,
+			select: function(event,ui){
+				console.log(ui);
+				$("#input-root_name").html(ui.item.name);
+				var rev = $("#input-rootrev");
+				rev.empty();
+				$.each(ui.item.revs,function(k,v){
+					rev.append($('<option>', {
+						value: v,
+						text: v
+					}));
+				});
+				partselected(ui.item.value,$("#input-rootrev").val());
+			}
+		});
+		
+		
+		$('form input').keydown(function (e) {
+			if (e.keyCode == 13) {
+				e.preventDefault();
+				return false;
+			}
+		});
+		$( "#settings" ).submit(function( event ) {
+			event.preventDefault();
+			console.log( $(this).serialize() );
+			var formdata = $(this).serialize();
+			$.ajax({
+				type: "POST",
+				url: "{{ajax_route}}",
+				data: formdata,
+				success: function(msg) {
+					$.magnificPopup.open({
+						closeOnBgClick: false,
+						items: {
+							src: msg,
+							type: 'inline'
+						}
+					});
+					
+					$("#btnexport").click(function(){
+						$("#table2export").csvExport();
+					});
+				},
+				error: function() {
+					$.magnificPopup.open({
+						closeOnBgClick: false,
+						items: {
+							src: '<div class="white-popup">failure</div>',
+							type: 'inline'
+						}
+					});
+				}
+			});      
+		});
+	});
+</script>
+{{ footer }}

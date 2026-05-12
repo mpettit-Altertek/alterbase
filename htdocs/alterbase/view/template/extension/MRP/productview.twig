@@ -1,0 +1,574 @@
+{{ header }}{{ column_left }}
+
+<div id="content">
+	<style>
+		.ui-autocomplete-loading {
+			background: white url("view/image/ui-anim_basic_16x16.gif") right center no-repeat;
+		}
+		.ui-autocomplete{
+			z-index:10000;
+		}
+		.white-popup {
+			position: relative;
+			background: #FFF;
+			width: auto;
+			max-width: 80%;
+			margin: 20px auto;
+		}
+		.white-popup .panel-heading {
+			color: #000000;
+			border-color: #dcdcdc;
+			background: #bfbfbf;
+			text-shadow: 0 -1px 0 rgba(50,50,50,0);
+		}
+		.editactionbutton{
+			display:none;
+			height: 36.4px;
+		}
+		textarea {
+			white-space: pre;
+			overflow: hidden;
+			resize: none;
+		}
+		.pull-right {
+			padding-bottom: 10px;
+		}
+		#buttons{
+			display: inline-block;
+		}
+		.ui-widget-overlay{
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			z-index: 1042;
+			overflow: hidden;
+			position: fixed;
+			background: #0b0b0b;
+			opacity: 0.8;
+		}
+		.panel {
+			margin-bottom:unset;
+		}
+		
+		a.collapsed .panel-title::before
+		{
+			font: normal normal normal 14px/1 FontAwesome;
+			content: "\f138";
+			padding-right: 15px;
+		}
+		a .panel-title::before
+		{
+			font: normal normal normal 14px/1 FontAwesome;
+			content: "\f13a";
+			padding-right: 15px;
+		}
+		
+		#BOMtree > thead > tr > th {
+			margin: 0;
+			padding: 2px;
+		}
+		#BOMtree > tbody > tr > td:nth-child(1) {
+			white-space: nowrap;
+			width: 1px;
+		}
+		#BOMtree > tbody > tr > td:nth-child(2),
+		#BOMtree > thead > tr > th:nth-child(2) {
+			width:35px;
+			text-align: center;
+		}
+		#BOMtree > tbody > tr > td:nth-child(3),
+		#BOMtree > thead > tr > th:nth-child(3) {
+			width:50px;
+			text-align: center;
+		}
+
+	</style>
+	<div class="page-header">
+		<div class="container-fluid">
+			<div class="pull-right">
+				<div id="buttons">
+					<a href="#duplicate-popup"							data-toggle="tooltip" title="{{ button_duplicate }}"	class="btn btn-primary open-popup-link editactionbutton"><i class="fa {{button_duplicate_icon}}"></i></a>
+					<button type="button"		id="editlocked"			data-toggle="tooltip" title="{{ button_enable_edit }}"	class="btn btn-primary"									><i class="fa {{button_enable_edit_icon}}"></i></button>
+					<button type="button"		id="editopen"			data-toggle="tooltip" title="{{ button_disable_edit }}"	class="btn btn-primary"									><i class="fa {{button_disable_edit_icon}}"></i></button>
+					<a href="#history-popup"	id="open_history-popup"	data-toggle="tooltip" title="{{ button_history }}"		class="btn btn-primary"									><i class="fa {{button_history_icon}}"></i></a>
+				</div>
+				<a href="{{ cancel }}"								data-toggle="tooltip" title="{{ button_cancel }}"		class="btn btn-default"									><i class="fa fa-reply"></i></a>
+			</div>
+			<h1><i class="fa {{ heading_icon }}"></i>&nbsp;{{ heading_title }}</h1><br>
+			<ul class="breadcrumb">
+				{% for breadcrumb in breadcrumbs %}
+				<li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+				{% endfor %}
+			</ul>
+		</div>
+	</div>
+	<div class="container-fluid">
+		{% if error %}
+			<div class="alert alert-danger alert-dismissible"><i class="fa fa-exclamation-circle"></i> {{ error }}
+				<button type="button" class="close" data-dismiss="alert">&times;</button>
+			</div>	
+		{% endif %}
+		<div class="panel panel-default" id="prodaccordion">
+			<div class="panel panel-default">
+				<a data-toggle="collapse" data-parent="#prodaccordion" href="#prod_details">
+					<div class="panel-heading">
+						<h3 class="panel-title">
+							{{ text_view_details }}
+						</h3>
+					</div>
+				</a>
+				<div id="prod_details" class="panel-collapse collapse">
+					<div class="panel-body">
+						<form action="{{ action_part }}" method="post" enctype="multipart/form-data" id="form-record" class="form-horizontal">
+						
+							<div class="editactionbutton">
+								<div class="pull-right">
+									<input type="submit" data-toggle="tooltip" title="<i class='fa fa-save'></i>{{ button_save }}" class="btn btn-primary"></input>
+								</div>
+								<br>
+							</div>
+							<div class="form-group">
+								<label class="col-sm-2 control-label" for="input-id">{{ entry_partno }}</label>
+								<div class="col-sm-9 input-group">
+									{% if id is null %}
+										<select name="id" id="input-id" class="form-control" required>
+											{% for op in nextids %}
+												<option value="{{ op.val }}">{{ op.text }}</option>
+											{% endfor %}
+										</select>
+										<input type="hidden" name="rev" value="A" id="input-rev"/>
+									{% else %}
+										<input type="text" value=" {{ dispidrev }}" class="form-control" disabled />
+										<input type="hidden" name="id" value="{{ id }}" id="input-id"/>
+										<input type="hidden" name="rev" value="{{ rev }}" id="input-rev"/>
+									{% endif %}
+								</div>
+							</div>
+							<div class="form-group">
+								<label class="col-sm-2 control-label" for="input-name">{{ entry_name }}</label>
+								<div class="col-sm-9 input-group">
+									<input type="text" name="fields[name]"value="{{ name }}" id="input-name" class="form-control" />
+								</div>
+							</div>
+							
+							{% for field in fields %}
+								<div class="form-group">
+									<label class="col-sm-2 control-label" for="input-{{ field.name }}">
+										{% if field.tooltip|length > 1 %}
+											<span data-toggle="tooltip" title="" data-original-title="{{field.tooltip}}">
+										{% endif %}
+										{{ field.name|replace({'_': ' '}) }}
+										{% if field.tooltip|length > 1 %}
+											</span>
+										{% endif %}
+									</label>
+									<div class="col-sm-9 input-group">
+										{% if field.type == 1 %}
+											<textarea name="fields[{{ field.name }}]" placeholder="{{ entry_field }}" id="input-{{ field.name }}" class="form-control fitY">{{ field_data[field.name] }}</textarea>
+										{% elseif field.type == 2 %}
+											<input type="number" name="fields[{{ field.name }}]" id="input-{{ field.name }}" class="form-control" value="{{ field_data[field.name] }}" step="0.001" />
+											<span class="input-group-addon">{{field.options[0]}}</span>
+
+										{% elseif field.type == 3 %}
+										
+											<select  name="fields[{{ field.name }}]" id="input-{{ field.name }}" class="form-control">
+												{% for k,v in field.options %}
+													{% if k == field_data[field.name] %}
+														<option value="{{k}}" selected >{{v}}</option>
+													{% else %}
+														<option value="{{k}}" >{{v}}</option>
+													{% endif %}
+												{% endfor %}
+											</select>
+										{% elseif field.type == 4 %}
+											<input type="text" name="fields[{{ field.name }}]" id="input-{{ field.name }}" class="form-control datepicker" value="{{ field_data[field.name] }}" />
+										{% elseif field.type == 5 %}
+											<input type="text" name="fields[{{ field.name }}]" id="input-{{ field.name }}" class="form-control masked" data-inputmask-regex="£[0-9]{1,}\.[0-9]{2,}" value="{{ field_data[field.name] }}"  />
+										{% endif %}
+									</div>
+								</div>
+							{% endfor %}
+							
+						</form>
+					</div>
+				</div>
+			</div>
+			{% if id is not null %}
+				<div class="panel panel-default">
+					<a data-toggle="collapse" data-parent="#prodaccordion" href="#prod_BOM">
+						<div class="panel-heading">
+							<h3 class="panel-title">
+								<i class="fas fa-stream"></i>&nbsp;{{ text_BOM }}
+							</h3>
+						</div>
+					</a>
+					<div id="prod_BOM" class="panel-collapse collapse">
+						<div class="panel-body">
+							<div class="pull-right">
+								<a href="#BOMedit-popup" data-toggle="tooltip" title="{{ button_edit }}" class="btn btn-primary open-popup-link editactionbutton"><i class="fa fa-edit"></i></a>
+							</div>
+							
+							<table id="BOMtree" class="treetable">
+								<thead>
+									<tr>
+										<th>Part Number</th>
+										{% for col in bomcols %}
+											<th>{{col.name|replace({'_': ' '})}}</th>
+										{% endfor %}
+									</tr>
+								</thead>
+								<tbody>
+									{% for item in fullbom %}
+										<tr data-tt-id="{{item.id}}" data-tt-parent-id="{{item.parid}}" class="{{item.cls}}">
+											<td>
+												<img  src="{{item.icon}}" />&nbsp;{{item.partno}}
+											</td>
+											{% for col in bomcols %}
+												<td>
+												{{ include(template_from_string("{{item.data."~col.datapath~"}}")) }}
+												</td>
+											{% endfor %}
+										</tr>
+									{% endfor %}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+				<div class="panel panel-default">
+					<a data-toggle="collapse" data-parent="#prodaccordion" href="#prod_usedon">
+						<div class="panel-heading">
+							<h3 class="panel-title">
+								<i class="fas fa-stream"></i>&nbsp;{{ text_usedon }}
+							</h3>
+						</div>
+					</a>
+					<div id="prod_usedon" class="panel-collapse collapse">
+						<div class="panel-body">
+							<table id="usedon" class="table table-bordered">
+								<thead>
+									<tr>
+										{% for col in usedoncols %}
+											<th>{{col.name|replace({'_': ' '})}}</th>
+										{% endfor %}
+									</tr>
+								</thead>
+								<tbody>
+									{% for item in usedon %}
+										<tr>
+											{% for col in usedoncols %}
+												<td>
+													{{ include(template_from_string("{{item."~col.datapath~"}}")) }}
+												</td>
+											{% endfor %}
+										</tr>
+									{% endfor %}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+				<div class="panel panel-default">
+					<a data-toggle="collapse" data-parent="#prodaccordion" href="#prod_stat">
+						<div class="panel-heading">
+							<h3 class="panel-title">
+								<i class="fas fa-table"></i>&nbsp;{{ text_statistics }}
+							</h3>
+						</div>
+					</a>
+					<div id="prod_stat" class="panel-collapse collapse">
+						<div class="panel-body">
+							<div class="accordion" id="stataccordion">
+								{% for mod in statmodules %}
+									{{mod}}
+								{% endfor %}
+							</div>
+						</div>
+					</div>
+				</div>
+				{% for mod in modules %}
+					{{mod}}
+				{% endfor %}
+				
+			{% endif %}
+		</div>
+	</div>
+</div>
+{{ popups }}
+<script>
+	$(function () {
+		
+		function autoresizeY(textarea) {
+			textarea.style.height = '0px';     //Reset height, so that it not only grows but also shrinks
+			var newheight = (textarea.scrollHeight+2);
+			if(newheight<36) {newheight=36;}
+			textarea.style.height = newheight + 'px';    //Set new height
+		}
+		function autoresizeX(textarea) {
+			textarea.style.width = '0px';
+			var newwidth = (textarea.scrollWidth+25);
+			if(newwidth<148.4) {newwidth=148.4;}
+			textarea.style.width = newwidth + 'px';
+		}
+		function formfuncs (){
+			$('.fitY').each(function ()		{ autoresizeY(this);	});
+			$('.fitY').keyup(function ()	{ autoresizeY(this);	});
+			$('.fitX').each(function ()		{ autoresizeX(this);	});
+			$('.fitX').keyup(function ()	{ autoresizeX(this);	});
+			
+			$('input, select, textarea').on('change', function() {
+				$(this).addClass('changed');
+			});
+			$('#bomedit input, #bomedit select, #bomedit textarea').on('change',function() {
+				$('#'+$.escapeSelector(this.parentElement.parentElement.children[0].children[0].id)).addClass('changed');
+				$('#'+$.escapeSelector(this.parentElement.parentElement.children[1].children[0].id)).addClass('changed');
+			});
+			
+			$('form input').keydown(function (e) {
+				if (e.keyCode == 13) {
+					e.preventDefault();
+					return false;
+				}
+			});
+			$('form').on('submit', function(e) {
+				$('input, textarea, select').prop('disabled', false);
+				{% if id is not null %}
+					$(	'input[type!="hidden"]:not([required]):not(.changed)').prop('disabled', true);
+					$(	'textarea:not([required]):not(.changed)').prop('disabled', true);
+					$(	'select:not([required]):not(.changed)').prop('disabled', true);
+				{% endif %}
+
+				var nchanged = ($('.changed').length == 0);
+				if(nchanged){
+					e.preventDefault();
+					$.magnificPopup.close();
+					$('input, textarea, select').prop('disabled', false);
+					$("#editopen").trigger( "click" );
+				}
+			});
+			$(".datepicker").datepicker();
+			
+			$(".masked").inputmask();
+			$(".partnumber" ).autocomplete({
+				source: decodeURIComponent("{{searchproducturl}}"),
+				minLength: 2,
+				autoFocus: true,
+				select: function(event,ui){
+					console.log(ui);
+					var id = event.target.id;
+					var ix = /\[([0-9]*)\]/gm.exec(id)[1];
+					var rev = $("#"+$.escapeSelector("input-rootbom["+ix+"][child_rev]"));
+					rev.empty();
+					rev.append($('<option>', {
+							value: '+',
+							text: '+ : Latest'
+						}));
+					$.each(ui.item.revs,function(k,v){
+						rev.append($('<option>', {
+							value: v,
+							text: v
+						}));
+					});
+				}
+			});
+		}
+		formfuncs();
+		
+		$("#bomedit").dynamiclist({
+			maxSize: 300,
+			addCallbackFn: function(item){
+				console.log('added line');
+				
+				item.find('input[type!="hidden"][type!="checkbox"], textarea, select').prop('required', true);
+				formfuncs();
+			},
+		});
+
+		$("#editlocked").click( function(){
+			{% if RW_permission %}
+				BootstrapDialog.show({
+					title: '{{confirm_edit_title}}',
+					message: '{{confirm_edit}}',
+					buttons: [{
+						label: '{{confirm_edit_options.edit}}',
+						action: function(dialog) {
+							$("#editlocked").hide();
+							$("#editopen").show();
+							$(".editactionbutton").show();
+							$('input, select, textarea').not( "[forced_readonly='True']" ).prop('readonly', false);		/* comment here to make read only */
+							$('select').not( "[forced_readonly='True']" ).prop('disabled', false);						/* comment here to make read only */
+							dialog.close();
+						}
+					}, {
+						label: "{{confirm_edit_options.duplicate}}",
+						action: function(dialog) {
+							$.magnificPopup.open({
+								items:{
+									type:'inline',
+									src: "#duplicate-popup",
+								},
+								closeOnBgClick: false,
+								callbacks: {
+									open: function() {
+										console.log('Popup is opened');
+										formfuncs();
+									},
+									close: function() {
+										console.log('Popup is closed');
+										formfuncs();
+									}
+								},
+							});
+							$('input, select, textarea').prop('readonly', false);
+							$('select').prop('disabled', false);
+							dialog.close();
+						}
+					}, {
+						label: "Cancel",
+						action: function(dialog) {
+							dialog.close();
+						}
+					}]
+				});
+			{% else %}
+				BootstrapDialog.show({
+					title: '{{no_edit_title}}',
+					message: '{{no_edit}}',
+					buttons: [{
+						label: "Cancel",
+						action: function(dialog) {
+							dialog.close();
+						}
+					}]
+				});
+			{% endif %}
+		});
+		$("#editopen").click( function(){
+		
+			if ($(".changed").length ) {
+			
+				BootstrapDialog.show({
+					title: '{{confirm_loss_title}}',
+					message: '{{confirm_loss}}',
+					buttons: [{
+						label: '{{confirm_loss_options.clear}}',
+						action: function(dialog) {
+							$("#editlocked").show();
+							$("#editopen").hide();
+							$(".editactionbutton").hide();
+							$('input, textarea').prop('readonly', true);
+							$('select').prop('disabled', true);
+							$('form').each (function(){  
+								this.reset();
+							}); 
+							$('input, select, textarea').removeClass('changed');
+							dialog.close();
+						}
+					}, {
+						label: "Cancel",
+						action: function(dialog) {
+							dialog.close();
+						}
+					}]
+				});
+			}
+			else{
+				$("#editlocked").show();
+				$("#editopen").hide();
+				$(".editactionbutton").hide();
+				$('input, textarea').prop('readonly', true);
+				$('select').prop('disabled', true);
+				$('form').each (function(){  
+				this.reset();
+				}); 
+				$('input, select, textarea').removeClass('changed');
+			}
+		});
+		{% if (id is not null) %}
+			$("#editlocked").show();
+			$("#editopen").hide();
+			$(".editactionbutton").hide();
+			$('input, textarea').prop('readonly', true);
+			$('select').prop('disabled', true);
+			$('form').each (function(){  
+				this.reset();
+			}); 
+			$('input, select, textarea').removeClass('changed');
+		{% else %}
+			$("#editlocked").hide();
+			$("#editopen").show();
+			$(".editactionbutton").show();
+			$('input, select, textarea').prop('readonly', false);
+			$('select').prop('disabled', false);
+			$("#buttons").hide();
+		{% endif %}
+		{% if start_unlocked %}
+			$("#editlocked").hide();
+			$("#editopen").show();
+			$(".editactionbutton").show();
+			$('input, select, textarea').prop('readonly', false);
+			$('select').prop('disabled', false);
+		{% endif %}
+		
+		$("#accordion" ).collapse()
+		$("#stataccordion" ).collapse();
+		$("div.collapse")
+			.on('shown.bs.collapse', function (e) {
+				if (!$(this).is(e.target)) { return; }
+				localStorage.setItem("AccordionId"+this.id,'show');
+			})
+			.on('hidden.bs.collapse', function (e) {
+				if (!$(this).is(e.target)) { return; }
+				localStorage.setItem("AccordionId"+this.id,'hide');
+			})
+			.each(function(){
+				if (localStorage.getItem("AccordionId"+this.id) === null) {
+					localStorage.setItem("AccordionId"+this.id,'hide');
+				}
+				$( this ).collapse( localStorage.getItem("AccordionId"+this.id ));
+			});
+		
+		
+		$('.open-popup-link').magnificPopup({
+			type:'inline',
+			closeOnBgClick: false,
+			midClick: true, // Allow opening popup on middle mouse click. Always set it to true if you don't provide alternative source in href.
+			callbacks: {
+				open: function() {
+					console.log('Popup is opened');
+					formfuncs();
+				},
+				close: function() {
+					console.log('Popup is closed');
+					$("#form-BOM")[0].reset();
+					formfuncs();
+				}
+			},
+		});
+
+		$('#open_history-popup').magnificPopup({
+			type:'inline',
+			closeOnBgClick: false,
+			midClick: true, // Allow opening popup on middle mouse click. Always set it to true if you don't provide alternative source in href.
+			callbacks: {
+				open: function() {
+					console.log('Popup is opened');
+					$('#historytable').DataTable( {
+						processing: true,
+						serverSide: true,
+						fixedHeader: true,
+						destroy: true,
+						lengthMenu: [ [ 10, 50, 100, 200, 500,-1 ], [ 10, 50, 100, 200, 500, "ALL"] ],
+						ajax: "{{ ajax_route_history }}",
+					} );
+				},
+			},
+		});
+		$(".treetable").treetable({
+			expandable: true,
+			clickableNodeNames: true,
+		});
+	});
+</script>
+{{ footer }}

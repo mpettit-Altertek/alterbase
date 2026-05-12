@@ -1,0 +1,100 @@
+
+<div class="panel panel-default">
+	<a data-toggle="collapse" data-parent="#prodaccordion" href="#prod_stock">
+		<div class="panel-heading">
+			<h3 class="panel-title">
+				<i class="fas fa-boxes"></i>&nbsp;{{ text_stock }}
+			</h3>
+		</div>
+	</a>
+	<div id="prod_stock" class="panel-collapse collapse">
+		<div class="panel-body">
+			<div class="pull-right">
+				<a href="#stockhistory-popup"	data-toggle="tooltip" title="{{ button_stock_transactionHistory }}"	class="btn btn-primary" id="open_stockhistory-popup"><i class="fa {{ button_stock_transactionHistory_icon }}"	></i></a>
+				<a href="{{addstock}}"			data-toggle="tooltip" title="{{ button_stock_add }}"				class="btn btn-primary open-popup-ajax" id="open_stockadd"			><i class="fa {{ button_stock_add_icon }}"					></i></a>
+			</div>
+			<table id="stocktable" class="display" style="width:100%">
+				<thead>
+					<tr>
+						<th>{{entry_location}}</th>
+						<th>{{entry_ref}}</th>
+						<th>{{entry_qty}}</th>
+						<th>{{entry_action}}</th>
+					</tr>
+				</thead>
+			</table>
+			
+			<div id="stockhistory-popup" class="white-popup mfp-hide panel panel-default">
+				<div class="panel-heading">
+					<h3 class="panel-title"><i class="fa {{ button_stock_transactionHistory_icon }}"></i>&nbsp;{{ button_stock_transactionHistory}}<h3>
+				</div>
+				<div class="panel-body">
+					<table id="stocktransactiontable" class="display" style="width:100%">
+						<thead>
+							<tr>
+								<th>{{entry_date}}</th>
+								<th>from&nbsp;{{entry_location}}</th>
+								<th>from&nbsp;{{entry_ref}}</th>
+								<th>to&nbsp;{{entry_location}}</th>
+								<th>to&nbsp;{{entry_ref}}</th>
+								<th>{{entry_qty}}</th>
+								<th>{{entry_user}}</th>
+							</tr>
+						</thead>
+					</table>
+				</div>
+			</div>
+			<script>
+				$(function () {
+					$('#stocktable').DataTable( {
+						processing: true,
+						serverSide: true,
+						fixedHeader: true,
+						destroy: true,
+						lengthMenu: [ [ 10, 50, 100, 200, 500,-1 ], [ 10, 50, 100, 200, 500, "ALL"] ],
+						ajax: "{{ ajax_route_stock }}",
+					} );
+					$('#stocktable').DataTable().on( 'draw', function (e, settings) {
+						console.log('stocktable is loaded');
+						$('.open-popup-ajax').magnificPopup({
+							type: 'ajax',
+							closeOnBgClick: false,
+							ajax: {
+								settings: {
+									cache:false,
+								},
+								cursor: 'mfp-ajax-cur', // CSS class that will be added to body during the loading (adds "progress" cursor)
+								tError: '<a href="%url%">The content</a> could not be loaded.' //  Error message, can contain %curr% and %total% tags if gallery is enabled
+							},
+							callbacks: {
+								ajaxContentAdded: function() {
+									this.content.find("script").each(function(i) {
+										eval($(this).text());
+									});
+								}
+							},
+						});
+					});
+					$('#open_stockhistory-popup').magnificPopup({
+						type:'inline',
+						closeOnBgClick: false,
+						midClick: true, // Allow opening popup on middle mouse click. Always set it to true if you don't provide alternative source in href.
+						callbacks: {
+							open: function() {
+								console.log('Popup is opened');
+								$('#stocktransactiontable').DataTable( {
+									processing: true,
+									serverSide: true,
+									fixedHeader: true,
+									destroy: true,
+									lengthMenu: [ [ 10, 50, 100, 200, 500,-1 ], [ 10, 50, 100, 200, 500, "ALL"] ],
+									ajax: "{{ ajax_route_stocktransaction }}"
+								} );
+							},
+						},
+					});
+				});
+			</script>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,176 @@
+
+<style>
+	.list-template{
+		display:none;
+	}
+</style>
+<div id="duplicate-popup" class="white-popup mfp-hide panel panel-default">
+	<div class="panel-heading">
+		<h3 class="panel-title"><i class="fa {{ button_duplicate_icon }}"></i>&nbsp;{{ button_duplicate }}<h3>
+	</div>
+	<div class="panel-body">
+		<form action="{{ action_duplicate }}" method="post" enctype="multipart/form-data" id="form-duplicate" class="form-horizontal">
+			<input type="hidden" name="id"  value="{{ id }}"  />
+			<input type="hidden" name="rev" value="{{ rev }}" />
+			<div class="form-group">
+				<label class="col-sm-2 control-label" for="input-newid">&nbsp;</label>
+				<div class="col-sm-10">
+					<select name="newid" id="input-newid" class="form-control" required>
+						{% for op in nextids %}
+							<option value="{{ op.val }}">{{ op.text }}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-2 control-label" for="input-newrev">{{ entry_newrev }}</label>
+				<div class="col-sm-10">
+					<input type="text" name="newrev"  value="{{ rev }}" id="input-newrev"   class="form-control masked" data-inputmask-regex="[A-Z0-9\.]*" required />
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-2 control-label" for="input-notes">{{ entry_notes }}</label>
+				<div class="col-sm-10">
+					<textarea name="notes" id="input-notes"   class="form-control" required ></textarea>
+				</div>
+			</div>
+			<div class="control-group">
+				<input type="submit" data-toggle="tooltip" title="<i class='fa {{ button_duplicate_icon }}'></i>&nbsp;{{ button_duplicate }}" class="btn btn-primary"></input>
+			</div>
+		</form>
+	</div>
+</div>
+<div id="BOMedit-popup" class="white-popup mfp-hide panel panel-default">
+	<div class="panel-heading">
+		<h3 class="panel-title">{{ text_BOM }}<h3>
+	</div>
+	<div class="panel-body">
+		<form action="{{ action_bom }}" method="post" enctype="multipart/form-data" id="form-BOM" class="form-horizontal">
+			<input type="hidden" name="id" value="{{ id }}" />
+			<input type="hidden" name="rev" value="{{ rev }}" />
+			<div class="control-group">
+				<div style="height: 36.4px;">
+					<div class="pull-right">
+						<input type="submit" data-toggle="tooltip" title="<i class='fa fa-save'></i>{{ button_save }}" class="btn btn-primary"></input>
+					</div>
+					<br>
+				</div>
+				<div id="bomedit" class="controls">
+					<table>
+						<tr>
+							<th>Part Number</th>
+							<th>Part Revision</th>
+							{% for col in editbomcols %}
+								<th>
+									{{col.name|replace({'_': ' '})}}
+								</th>
+							{% endfor %}
+						</tr>
+						
+						{% for ix in (-1)..((rootbom|length)-1) %}
+							{% set key = ((ix==(-1))?'#':ix) %}
+							<tr class="{{ (ix==(-1))?'list-template':'list-item'}}">
+								<td>
+									<input name="rootbom[{{ key }}][child_id]" type="text" placeholder="{{ entry_field }}" id="input-rootbom[{{ key }}][child_id]" value="{{ rootbom[key] ? rootbom[key].child_id }}" class="form-control {{ (ix == (-1))?'partnumber'}}" style="display:inline-block;    width: 160;" {{ (ix == (-1))?' ':'disabled' }}>
+								</td>
+								<td>
+									<select name="rootbom[{{ key }}][child_rev]" id="input-rootbom[{{ key }}][child_rev]" class="form-control" style="display:inline-block;    width: 160;" {{ (ix == (-1))?' ':'disabled' }}>
+										<option value="{{ rootbom[key] ? rootbom[key].child_rev }}" selected >{{ rootbom[key] ? rootbom[key].child_rev }}</option>
+									</select>
+								</td>
+								{% for field in editbomcols %}
+									<td>
+										{% if field.type == 1 %}
+											<textarea name="rootbom[{{ key }}][{{field.name}}]" placeholder="{{ entry_field }}" id="input-rootbom[{{ key }}][{{field.name}}" class="form-control fitY fitX">{{ rootbom[key] ? rootbom[key][field.name] }}</textarea>
+										{% elseif field.type == 2 %}
+											<input type="number" name="rootbom[{{ key }}][{{field.name}}]" id="input-rootbom[{{ key }}][{{field.name}}" class="form-control" step="0.001" value="{{ rootbom[key] ? rootbom[key][field.name] }}" />
+										{% elseif field.type == 3 %}
+											<select  name="rootbom[{{ key }}][{{field.name}}]" id="input-rootbom[{{ key }}][{{field.name}}" class="form-control">
+												{% for k,v in field.options %}
+													{% if k == field_data[field.name] %}
+														<option value="{{k}}" selected >{{v}}</option>
+													{% else %}
+														<option value="{{k}}" >{{v}}</option>
+													{% endif %}
+												{% endfor %}
+											</select>
+										{% elseif field.type == 4 %}
+											<input type="text" name="rootbom[{{ key }}][{{field.name}}]" id="input-rootbom[{{ key }}][{{field.name}}" class="form-control datepicker" value="{{ rootbom[key] ? rootbom[key][field.name] }}" />
+										{% elseif field.type == 5 %}
+											<input type="text" name="rootbom[{{ key }}][{{field.name}}]" id="input-rootbom[{{ key }}][{{field.name}}" class="form-control masked" data-inputmask-regex="£[0-9]{1,}\.[0-9]{2,}" value="{{ rootbom[key] ? rootbom[key][field.name] }}" />
+										{% endif %}
+									</td>
+								{% endfor %}
+								<td>
+									<input type="checkbox" name="rootbom[{{ key }}][remove]" value="{{ rootbom[key] ? rootbom[key].child_id }}">{{ entry_remove }}<br>
+								</td>
+							<tr>
+						{% endfor %}
+					</table>
+					<a href="#" class="list-add btn btn-primary">{{ entry_add }}</a>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+
+<div id="history-popup" class="white-popup mfp-hide panel panel-default">
+	<div class="panel-heading">
+		<h3 class="panel-title"><i class="fa fa-history"></i> {{ text_history }}</h3>
+	</div>
+	<div class="panel-body">
+		<div class="form-horizontal">
+			<div class="form-group">
+				<label class="col-sm-2 control-label" for="input-record_created">{{ text_record_created }}</label>
+				<div class="col-sm-10">
+					<input type="text" id='input-record_created' value=" {{ record_created }}" class="form-control" disabled />
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-2 control-label" for="input-record_created_by">{{ text_record_created_by }}</label>
+				<div class="col-sm-10">
+					<input type="text" id='input-record_created_by' value=" {{ record_created_by }}" class="form-control" disabled />
+				</div>
+			</div>
+		</div>
+		<table id="historytable" class="display" style="width:100%">
+			<thead>
+				<tr>
+					<th>{{entry_date}}</th>
+					<th>{{entry_user}}</th>
+					<th>{{entry_field}}</th>
+					<th>{{entry_oldval}}</th>
+					<th>{{entry_newval}}</th>
+				</tr>
+			</thead>
+		</table>
+	</div>
+</div>
+
+<div id="dialog-confirm-loss" class="modal" tabindex="-1" role="dialog">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Modal title</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body">
+				<p>Modal body text goes here.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+				<button type="button" class="btn btn-primary">Save changes</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+
+
+
+
+
+

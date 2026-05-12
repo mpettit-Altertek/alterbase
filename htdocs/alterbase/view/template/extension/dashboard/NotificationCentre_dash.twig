@@ -1,0 +1,16 @@
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<h3 class="panel-title">
+			<i class="fa fa-server"></i> {{ heading_title }}
+		</h3>
+	</div>
+	<style>
+	</style>
+	<div class="panel-body">
+		<div class="row">
+			{% for Notification in Notifications %}
+				{{Notification}}
+			{% endfor %}
+		</div>
+	</div>
+</div>
