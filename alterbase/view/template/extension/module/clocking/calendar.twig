@@ -1,0 +1,381 @@
+{{ header }}{{ column_left }}
+
+<div id="content">
+	<div class="page-header">
+		<div class="container-fluid">
+			<h1><i class="fa {{ heading_icon }}"></i>&nbsp;{{ heading_title }}</h1><br>
+			<ul class="breadcrumb">
+				{% for breadcrumb in breadcrumbs %}
+				<li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+				{% endfor %}
+			</ul>
+		</div>
+	</div>
+	<div class="container-fluid">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">{{ text_report }}<h3>
+			</div>
+			<div class="panel-body">
+				<div id="wksummary"></div>
+				<br>
+				<select id='users' class="form-control">
+					{% for opt in users %}
+						<option value="{{opt.id}}">{{opt.name}}</option>
+					{% endfor %}
+				</select>
+				<div id="scheduler_here" class="dhx_cal_container" style="width:100%; height:700px;">
+					<div class="dhx_cal_navline">
+						<div class="dhx_dummy dhx_cal_today_button" style='right:220px' onclick='scheduler.addEventNow()'>Add event</div>
+						<div class="dhx_cal_prev_button">&nbsp;</div>
+						<div class="dhx_cal_next_button">&nbsp;</div>
+						<div class="dhx_cal_today_button"></div>
+						<div class="dhx_cal_date"></div>
+						<div class="dhx_cal_tab" name="day_tab"></div>
+						<div class="dhx_cal_tab" name="week_tab"></div>
+						<div class="dhx_cal_tab" name="month_tab"></div>
+					</div>
+					<div class="dhx_cal_header"></div>
+					<div class="dhx_cal_data"></div>
+				</div>
+				<div id="legend">
+					{% for key in sources %}
+						<div style="background-color:{{key.color}};color:{{key.textColor}};">{{key.name}}</div>
+					{% endfor %}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<style type="text/css" >
+	html, body {
+		margin: 0;
+		padding: 0;
+	}
+	/* the background color for the whole container and its border*/
+	.my_event {
+		color:#FFFFFF;
+		background-color: #1796b0;
+		border: 1px solid #778899;
+		overflow: hidden;
+		
+		clip-path: 
+			polygon(
+				0% 0px,								/* top left */
+				0px 0%,								/* top left */
+				
+				calc(100% - 0px) 0%,				/* top right */
+				100% 0px,							/* top right */
+				
+				100% calc(100% - 100%),	/* bottom right */
+				calc(100% - 50%) 100%,	/* bottom right */
+				
+				50% 100%,				/* bottom left */
+				0 calc(100% - 100%)		/* bottom left */
+			);
+	}
+	
+	/* disabling the default color for the select menu */
+	.dhx_cal_select_menu.my_event div {
+		border: 0;
+		background-color: transparent;
+		color: black;
+	}    
+	/* styles for the event content */
+	.dhx_cal_event.my_event .my_event_body {
+		padding-top: 3px;
+		padding-left: 5px;
+		text-align: center;
+	}   
+	/* event's date information */
+	.my_event .event_date {         
+		font-weight: bold;
+		padding-right: 5px;
+	}   
+	/* event's resizing section */
+	.my_event_resize {
+		height: 3px;
+		position: absolute;
+		bottom: -1px;
+	}
+	/* event's move section */
+	.my_event_move {
+		position: absolute;
+		top: 0;
+		height: 10px;
+		cursor: pointer;
+	}
+	.my_event_title {
+		height: 12px;
+		border-width: 1px 1px 0 1px;
+		border-bottom-style: dotted;
+		border-radius: 4px 4px 0 0;
+		font-size: 12px;
+		line-height: 12px;
+		font-weight: 700;
+		text-align: center;
+		background-position: right;
+		background-repeat: no-repeat;
+		padding: 1px 0 0 0;
+		cursor: pointer;
+	}
+	#legend{
+		text-align: center;
+	}
+	#legend div {
+		font-size: 20px;
+		line-height: 0px;
+		padding: 17px;
+		border-radius: 10px;
+		font-family: 'Times New Roman', Times, serif;
+		font-weight: normal;
+		text-decoration: none;
+		font-style: normal;
+		font-variant: normal;
+		text-transform: uppercase;
+		display: inline-block;
+		min-width:200px;
+		margin: 10px;
+		text-align: center;
+		white-space: nowrap;
+	}
+
+</style>
+<script>
+	var footer = null;
+	function reload(){
+		scheduler.clearAll();
+		var val = $('#users').val();
+		scheduler.load("{{ajax_Calendar}}&user_id="+val,function(){
+
+			var schedulerNode = document.querySelector("#scheduler_here");
+			var header = schedulerNode.querySelector(".dhx_cal_header");
+			
+			if((scheduler._mode === "week") || (scheduler._mode === "day")){
+				if(!footer){
+					footer = document.createElement("div");
+					footer.id = "scheduler_footer";
+					footer.style.position = "relative";
+					footer.style.bottom = "110px";
+					schedulerNode.parentNode.insertBefore(footer, schedulerNode.nextSibling);
+				}
+
+				var footerContent = header.cloneNode(true);
+				footerContent.style.borderBottom = "1px solid #CECECE";
+				footer.innerHTML = "";
+				footer.appendChild(footerContent);
+						
+				
+				$('#scheduler_footer div').children('div').each(function () {
+					var oldhtml = $(this).html();
+					var mydate = moment(oldhtml,'dddd DD/MM/YYYY').format('YYYY-MM-DD');
+					var me = $(this);
+					$.ajax({
+						dataType: "json",
+						url: "{{ajax_getcumulativeEventTime}}",
+						data: {"date": mydate ,"period": 'day' , "user_id" : $('#users').val()},
+						success: function (result) {
+							console.log(["processing day",oldhtml,mydate,result])
+							var str = "<table width='100%'>";
+							for (var key in result) {
+								str += "	<tr>";
+								str += "		<td style='text-align: right;'>"+result[key].name+"</td>";
+								str += "		<td>"+result[key].length+"</td>";
+								str += "		<td>";
+								if(result[key].running=='1'){
+									str += "		<img  src='view/image/timer.gif' style='height: 15px;'/>";
+								}
+								str += "		</td>";
+								str += "	</tr>";
+							};
+							str += "</table>";
+							me.html(str);
+						},
+					});
+				});
+				
+				if(scheduler._mode =="week"){
+					var mydate = moment(scheduler.getState().min_date).format('YYYY-MM-DD');
+					$.ajax({
+						dataType: "json",
+						url: "{{ajax_getcumulativeEventTime}}",
+						data: {"date": mydate ,"period": 'week' , "user_id" : $('#users').val()},
+						success: function (result) {
+							console.log(["processing wk",result])
+							
+							var str = "";
+							str += "<table class='table table-bordered'>";
+							str += "	<tr style='background: #f6f6f6;'>";
+							str += "	<th colspan=2>Week summary</th>";
+							str += "	</tr>";
+							for (var key in result) {
+								str += "	<tr>";
+								str += "		<th>"+result[key].name+"</th>";
+								str += "		<td>"+result[key].length+"&nbsp;";
+								if(result[key].running=='1'){
+									str += "		<img  src='view/image/timer.gif' style='height: 15px;'/>";
+								}
+								str += "		</td>";
+								str += "	</tr>";
+							};
+							str += "</table>";
+							$('#wksummary').html(str);
+						},
+					});
+				}else{
+					$('#wksummary').html("");
+				}
+			}
+			else{
+				if(footer){
+					$("#"+footer.id).remove();
+					footer = null;
+				}
+			}
+		});
+	};
+
+	scheduler.attachEvent("onViewChange",			function (new_mode , new_date)	{ reload(); });
+	scheduler.attachEvent("onAfterSchedulerResize",	function()						{ reload(); });
+
+	scheduler.setLoadMode("day");
+	scheduler.templates.hour_scale = function(date){
+		var format = scheduler.date.date_to_str("%H:%i");
+		var step = 60;
+		var html="";
+		for (var i=0; i<60/step; i++){
+			html+="<div style='height:11px;line-height:11px;'>"+format(date)+"</div>";
+			date = scheduler.date.add(date,step,"minute");
+		}
+		return html;
+	}
+	
+	scheduler.config.hour_size_px = 22;
+	scheduler.config.separate_short_events = true;
+	scheduler.config.show_loading = true;
+	scheduler.config.details_on_dblclick = true;
+
+	scheduler.config.drag_create = true;
+	scheduler.config.drag_event_body = false;
+	scheduler.config.drag_move = false;
+	scheduler.config.drag_resize = false;
+	scheduler.config.details_on_create=true;
+	scheduler.config.edit_on_create = true;
+	
+	scheduler.xy.scale_height = 50;
+	
+	
+	scheduler.config.all_timed = true;
+	scheduler.config.multi_day = true;
+
+	
+	scheduler.config.time_step = 1;
+
+	var users		= [ {% for opt in users %}		{ key: {{opt.id}}, label: "{{opt.name}}" }, {% endfor %} ];
+	var allusers	= [ {% for opt in allusers %}	{ key: {{opt.id}}, label: "{{opt.name}}" }, {% endfor %} ];
+	var sources		= [ {% for opt in sources %}	{ key: {{opt.id}}, label: "{{opt.name}}" }, {% endfor %} ];
+	var types		= [ {% for opt in types %}		{ key: {{opt.id}}, label: "{{opt.name}}" }, {% endfor %} ];
+
+	scheduler.templates.event_text=function(start, end, event){
+		if(typeof(event.type) !== 'undefined'){
+			if(event.type>types.length){event.type=0;}
+			return types[event.type].label+"<hr style='margin-top: 4px; margin-bottom: 4px;'>"+event.text;
+		}
+		return event.text;
+	}
+	
+	
+
+	scheduler.config.icons_select = [];
+	scheduler.attachEvent("onClick", function(id){
+		var event = scheduler.getEvent(id);
+		if(event.delta==="00:00:00"){
+			scheduler.config.icons_select = [];
+		}else{
+			scheduler.config.icons_select = ["icon_details"];
+		}
+		return true;
+	});
+	scheduler.templates.event_class = function(start, end, event) {
+		if(event.delta==="00:00:00"){
+			return "my_event";
+		}
+	};
+	scheduler.renderEvent = function(container, event) {
+		if(event.delta==="00:00:00"){
+			var html = ""
+			html += "<div class='dhx_event_move my_event_move' style='width: " + container.style.width + "'></div>";
+			html += "<div class='my_event_title'>";
+			html += "	<span class='event_date'>"+scheduler.templates.event_date(event.start_date) + "</span>";
+			html += "</div>";
+			html += "<div class='my_event_body'>";
+			html += "	<span>" + types[event.type].label+"</span>";
+			//html += "	<span>" + scheduler.templates.event_text(event.start_date,event.end_date,event)+"</span>";
+			html += "</div>";
+			html += "<div class='dhx_event_resize my_event_resize' style='width: " + container.style.width + "'></div>";
+		
+			container.innerHTML = html;
+			return true; //required, true - to display a custom form, false - the default form
+		}else{
+			return false;
+		}
+	};
+	
+	scheduler.config.lightbox.sections = [
+		{ name: "Time",			map_to: "auto",		type: "calendar_time",	height: 72,												},
+		{ name: "Length",		map_to: "delta",	type: "textarea",		height: 30,												},
+		{ name: "Type",			map_to: "type",		type: "select",			height: 30,	options:types,		default_value:1			},
+		{ name: "Description",	map_to: "text",		type: "textarea",		height: 50,	focus: true 								},
+		{ name: "User",			map_to: "user_id",	type: "select",			height: 30,	options: users,		default_value:{{myid}}	},
+		{ name: "Source",		map_to: "source",	type: "select",			height: 30,	options: sources,	default_value:1			},
+		{ name: "Edited By",	map_to: "source_id",type: "select",			height: 30,	options: allusers,	default_value:{{myid}}	},
+	];
+	scheduler.config.date_format =	"%Y-%m-%d %H:%i:%s";
+	scheduler.config.day_date =		"%l %d/%m/%Y";
+	scheduler.config.default_date =	"%d/%m/%Y";
+	
+	scheduler.init("scheduler_here", new Date(),"week");
+	scheduler.attachEvent("onLightbox", function(id,isnew){
+		for (i = 0; i < scheduler.formSection("User").control.children.length; i++) {
+			scheduler.formSection("User").control[i].selected=false;
+		} 
+		scheduler.formSection("User").control.value = $('#users').val();
+		
+		if(isnew){
+			scheduler.formSection("Type").control.value = 0;
+			scheduler.formSection("Description").control.value = "";
+		}
+		
+		scheduler.formSection("Type").control.disabled = (isnew?false:true);
+		scheduler.formSection("User").control.disabled = true;
+		scheduler.formSection("Description").control.required = true;
+		scheduler.formSection("Length").control.disabled = true;
+		scheduler.formSection("Source").control.disabled = true;
+		scheduler.formSection("Edited By").control.disabled = true;
+	});
+	scheduler.attachEvent("onEventSave",function(id,ev,is_new){
+		if (!ev.text) {
+			dhtmlx.alert({
+				title:"Required Field",
+				text:"Description must not be empty",
+			})
+			return false;
+		}
+		return true;
+	})
+	
+	
+	reload();
+
+	var dp = new dataProcessor("{{ajax_Calendar}}");
+	dp.init(scheduler);
+	dp.setTransactionMode("JSON"); // use to transfer data with JSON
+	dp.attachEvent("onAfterUpdate", function(id, action, tid, response){
+		reload();
+	});
+	
+	$( "#users" ).change(function(){reload();});
+
+</script>
+{{ footer }}
+

@@ -1,0 +1,56 @@
+
+<div id="report-popup" class="white-popup panel panel-default">
+	<style>
+		.ellipsis {
+			max-width: 0;
+			width:100%;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}	
+		.shrink {
+			width:0%;
+		}
+		.fixed {
+			white-space: nowrap;
+		}
+		.cls_ready {
+		}
+		.cls_notready {
+			background-color: #ff000020;
+		}
+		.pull-right {
+			padding-bottom: 10px;
+		}
+	</style>
+	<div class="panel-heading">
+		<h3 class="panel-title"><i class="fas fa-clipboard-list"></i>&nbsp;{{ text_report }}</h3>
+	</div>
+	<div class="panel-body">
+		<div class="pull-right">
+			<button id="btnexport" title="{{ button_export }}" class="btn btn-primary"><i class="fas fa-hammer"></i>&nbsp;{{ button_export }}</button>
+		</div>
+		<br>
+		<table id="table2export" class="table table-bordered">
+			<thead>
+				<tr>
+					{% for col in bomcols %}
+						<th class="{{col.class}}">{{col.name|replace({'_': ' '})}}</th>
+					{% endfor %}
+				</tr>
+			</thead>
+			<tbody>
+				{% for item in bom %}
+					<tr class="{{item.row_cls}}">
+						{% for col in bomcols %}
+							<td class="{{col.class}}">{{item[col.datapath]}}</div></td>
+						{% endfor %}
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+		</form>
+	</div>
+</div>
+
+

@@ -1,0 +1,416 @@
+{{ header }}{{ column_left }}
+<div id="content">
+<style>
+	.white-popup {
+		position: relative;
+		background: #FFF;
+		width: auto;
+		max-width: 90%;
+		margin: 20px auto;
+	}
+	.list-template{
+		display:none;
+	}
+
+</style>
+<div class="page-header">
+	<div class="container-fluid">
+		<div class="float-right">
+			<button type="submit" form="form-dashboard" data-toggle="tooltip" title="{{ button_save }}" class="btn btn-primary"><i class="fa fa-save"></i></button>
+			<a href="{{ cancel }}" data-toggle="tooltip" title="{{ button_cancel }}" class="btn btn-light"><i class="fa fa-reply"></i></a></div>
+		<h1>{{ heading_title }}</h1>
+		<ol class="breadcrumb">
+			{% for breadcrumb in breadcrumbs %}
+				<li class="breadcrumb-item"><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+			{% endfor %}
+		</ol>
+	</div>
+</div>
+<div class="container-fluid">
+	{% if error_warning %}
+		<div class="alert alert-danger alert-dismissible"><i class="fas fa-exclamation-circle"></i> {{ error_warning }}
+			<button type="button" class="close" data-dismiss="alert">&times;</button>
+		</div>
+	{% endif %}
+	
+	
+	<form action="{{ action }}" method="post" enctype="multipart/form-data" id="form-dashboard">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">
+					<i class="fas fa-pencil-alt"></i> {{ text_edit }}
+				</h3>
+			</div>
+			<style>
+			</style>
+			<div class="panel-body">
+				<div class="row">
+					<label for="input-width" class="col-sm-2 col-form-label">{{ entry_width }}</label>
+					<div class="col-sm-10">
+						<select name="dashboard_NotificationCentre_width" id="input-width" class="form-control">
+							{% for column in columns %}
+								{% if column == dashboard_NotificationCentre_width %}
+									<option value="{{ column }}" selected="selected">{{ column }}</option>
+								{% else %}
+									<option value="{{ column }}">{{ column }}</option>
+								{% endif %}
+							{% endfor %}
+						</select>
+					</div>
+				</div>
+				<div class="row">
+					<label for="input-status" class="col-sm-2 col-form-label">{{ entry_status }}</label>
+					<div class="col-sm-10">
+						<select name="dashboard_NotificationCentre_status" id="input-status" class="form-control">
+							{% if dashboard_NotificationCentre_status %}
+								<option value="1" selected="selected">{{ text_enabled }}</option>
+								<option value="0">{{ text_disabled }}</option>
+							{% else %}
+								<option value="1">{{ text_enabled }}</option>
+								<option value="0" selected="selected">{{ text_disabled }}</option>
+							{% endif %}
+						</select>
+					</div>
+				</div>
+				<div class="row">
+					<label for="input-sort-order" class="col-sm-2 col-form-label">{{ entry_sort_order }}</label>
+					<div class="col-sm-10">
+						<input type="text" name="dashboard_NotificationCentre_sort_order" value="{{ dashboard_NotificationCentre_sort_order }}" placeholder="{{ entry_sort_order }}" id="input-sort-order" class="form-control"/>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="setups" class="dynamiclist">
+			{% for ix in (-1)..((items|length)-1) %}
+				{% set key = ((ix==(-1))?'#':ix) %}
+				<div class="{{ (ix==(-1))?'list-template':'list-item'}}">
+					<div class="panel panel-default">
+						<div class="panel-heading">
+							<h3 class="panel-title">
+								<i class="fas fa-pencil-alt"></i> {{ text_edit }}
+							</h3>
+						</div>
+						<div class="panel-body">
+							<div class="col-md-12">
+								<label for="input-status" class="col-sm-2 col-form-label">{{ entry_rule }}</label>
+								<div class="col-sm-10">
+									<div class="input-group">
+										<span class="input-group-addon">
+											<i class="fas fa-stream"></i>
+										</span>
+										<input type="text" class="form-control" id="items[{{ key }}][rule]" name="items[{{ key }}][rule]" value='{{ items[key].rule }}' for='items[{{ key }}][variables]' readonly>
+										<span class="input-group-btn">
+											<a href="#edit-popup" class="open-popup-link btn btn-primary" id="editrule[{{ key }}]" for="items[{{ key }}][rule]" onclick="openeditor(this); return false;"><i class="fas fa-edit"></i></a>
+										</span>
+									</div>
+								</div>
+							</div>
+							<div class="col-md-12">
+								<label for="input-status" class="col-sm-2 col-form-label">{{ entry_variables }}</label>
+								<div class="col-sm-10">
+									<select id="items[{{ key }}][variables]" class="varinsert form-control" for="items[{{ key }}][notification]" multiple></select>
+								</div>
+							</div>
+							<div class="col-md-12">
+								<label for="input-status" class="col-sm-2 col-form-label">{{ entry_notification }}</label>
+								<div class="col-sm-10">
+									<textarea class="form-control" id="items[{{ key }}][notification]" name="items[{{ key }}][notification]">{{ items[key].notification }}</textarea>
+								</div>
+							</div>
+							<div class="col-md-12"  style="display:none;">
+								<label for="input-status" class="col-sm-2 col-form-label">{{ entry_route }}</label>
+								<div class="col-sm-10">
+									<select name="items[{{ key }}][route]" class="form-control">
+										<option value=0 {% if(items[key].route == 0) %}  selected="selected" {% endif %} > {{ route_N }} </option>
+										<option value=1 {% if(items[key].route == 1) %}  selected="selected" {% endif %} > {{ route_E_U }} </option>
+										<option value=2 {% if(items[key].route == 2) %}  selected="selected" {% endif %} > {{ route_E_S }} </option>
+										<option value=3 {% if(items[key].route == 3) %}  selected="selected" {% endif %} > {{ route_NE_U }} </option>
+										<option value=4 {% if(items[key].route == 4) %}  selected="selected" {% endif %} > {{ route_NE_S }} </option>
+									</select>
+								</div>
+							</div>
+							<div class="col-md-12">
+								<a href="#" class="list-remove btn btn-primary">{{ entry_remove }}</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			{% endfor %}
+			<a href="#" class="list-add btn btn-primary">{{ entry_add }}</a>
+		</div>
+	</form>
+	<div id="edit-popup" class="white-popup mfp-hide">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">
+					<i class="fas fa-pencil-alt"></i> {{ text_edit_rule }}
+				</h3>
+			</div>
+			<div class="panel-body">
+				<div class="col-md-12">
+					<label for="input-status" class="col-sm-2 col-form-label">{{ entry_table }}</label>
+					<div class="col-sm-10">
+						<div class="col-sm-12">
+							<div class="col-sm-12">
+								<label for="input-status" class="col-sm-2 col-form-label">{{ entry_primary }}</label>
+								<div class="col-sm-12">
+									<select id="tbl_primary" class="form-control">
+										{% for tblkey,tblval in tables %}
+											<option value="{{ tblkey }}">{{ tblkey }}</option>
+										{% endfor %}
+									</select>
+								</div>
+							</div>
+							<div id="jointables" class="dynamiclist">
+								<div class="list-template">
+									<div class="col-sm-12">
+										<label for="input-status" class="col-sm-2 col-form-label">{{ entry_join }}</label>
+										<div class="col-sm-8">
+											<select name="tbl_join[#]" class="form-control"></select>
+										</div>
+										<div class="col-sm-2">
+											<a href="#" class="list-remove btn btn-primary">{{ entry_remove }}</a>
+										</div>
+									</div>
+								</div>
+								<div class="col-sm-10">
+									<a href="#" class="list-add btn btn-primary">{{ entry_add }}</a>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-12">
+						<label for="input-status" class="col-sm-2 col-form-label">{{ entry_where }}</label>
+						<div class="col-sm-10">
+							<div id="builder"></div>
+						</div>
+					</div>
+					<div class="col-md-12">
+						<div class="btn-group">
+							<div id="btn-clr"	class="btn btn-warning"	>clear</div>
+							<div id="btn-save"	class="btn btn-primary"	>Save</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	(function(window){
+		window.htmlentities = {
+			encode : function(str) {
+				var buf = [];
+				
+				for (var i=str.length-1;i>=0;i--) {
+					buf.unshift(['&#', str[i].charCodeAt(), ';'].join(''));
+				}
+				
+				return buf.join('');
+			},
+			decode : function(str) {
+				return str.replace(/&#(\d+);/g, function(match, dec) {
+					return String.fromCharCode(dec);
+				});
+			}
+		};
+	})(window);
+
+
+	$('#builder').queryBuilder({
+		operators: $.fn.queryBuilder.constructor.DEFAULTS.operators.concat([
+			{
+				type: 'is_currentUser()',
+				nb_inputs: 0,
+				multiple: false,
+				apply_to: ['int']
+			},
+			{
+				type: 'is_subordinateUser()',
+				nb_inputs: 0,
+				multiple: false,
+				apply_to: ['int']
+			},
+			{
+				type: 'today()',
+				nb_inputs: 0,
+				multiple: false,
+				apply_to: ['datetime']
+			},
+			{
+				type: 'this_week()',
+				nb_inputs: 0,
+				multiple: false,
+				apply_to: ['datetime']
+			},
+		]),
+		plugins: {
+			'bt-tooltip-errors': null,
+			'not-group':{
+				icon_unchecked: 'far fa-square',
+				icon_checked: 'far fa-check-square',
+				disable_template: false,
+			},
+		},
+		icons: {
+			add_group: 'fas fa-plus-square',
+			add_rule: 'fas fa-plus-circle',
+			remove_group: 'fas fa-minus-square',
+			remove_rule: 'fas fa-minus-circle',
+			error: 'fas fa-exclamation-triangle'
+		},
+		filters: [{
+			id: 'name',
+			label: 'Name',
+			type: 'string'
+		}]
+	});
+
+	$('#btn-clr').on('click', function() {
+		$('#builder').queryBuilder('reset');
+	});
+	function getjoins(){
+		$.ajax({
+			type: 'POST',
+			url: '{{ajax_joins}}',
+			data: { 'prime': $('#tbl_primary').val() },
+			dataType: "json",
+			async:false,
+			success: function(data, status){
+				$("#jointables select").each( function( index, element ) {
+					$(element).empty();
+					$.each(data, function(i, item) {
+						$(element).append('<option value="' + item.val + '">' + item.text + '</option>');
+					});
+				});
+			},
+		});
+	}
+	
+	function getfilters(){
+		var join = {};
+		$(" #jointables .list-item select").each( function( index, value ) {
+			join[index] = $(this).val();
+		});
+		var data = {
+			'prime':	$('#tbl_primary').val(),
+			'join':		join,
+		};
+		$.ajax({
+			type: 'POST',
+			url: '{{ajax_filters}}',
+			data: data,
+			dataType: "json",
+			async:false,
+			success: function(data, status){
+				$('#builder').queryBuilder('setFilters', data);
+			},
+		});
+	}
+	
+	$("#tbl_primary").on('change',function() {
+		getfilters();
+	});
+	
+	
+	var editingfield = null;
+	$('#btn-save').on('click', function() {
+		var result = $('#builder').queryBuilder('getRules');
+		if (!$.isEmptyObject(result)) {
+			
+			var join = {};
+			$("#jointables .list-item select").each( function( index, value ) {
+				join[index] = $(this).val();
+			});
+			
+			$(editingfield).val(
+				JSON.stringify({
+					'db': {
+						'prime':	$('#tbl_primary').val(),
+						'join':		join,
+					},
+					'rule':	result,
+				})
+			);
+			$(editingfield).trigger('change');
+			$.magnificPopup.close();
+		}
+	});
+	
+	
+	function openeditor(button){
+		editingfield = '#'+	$.escapeSelector(button.attributes.for.value);
+		console.log(['editing',editingfield,$(editingfield).val()]);
+		
+		$('#builder').queryBuilder('reset');
+		if($(editingfield).val().length!=0){
+		
+			var j = JSON.parse($(editingfield).val());
+			
+			$("#jointables .list-item select").each( function( index, value ) {
+				$("#jointables .list-remove").trigger('click');
+			});
+			$('#tbl_primary').val(j.db.prime);
+			
+			getjoins();
+			
+			for (i = 0; i < Object.keys(j.db.join).length; i++){
+				$("#jointables .list-add").trigger('click');
+			}
+			$("#jointables .list-item select").each( function( index, value ) {
+				$(this).val(j.db.join[index]);
+			});
+			$('#tbl_primary').val(j.db.prime);
+			getfilters();
+			$('#builder').queryBuilder('reset');
+			$('#builder').queryBuilder('setRules',j.rule);
+		}else{
+			$("#jointables .list-item select").each( function( index, value ) {
+				$("#jointables .list-remove").trigger('click');
+			});
+			getfilters();
+			$('#builder').queryBuilder('reset');
+		}
+		$.magnificPopup.open({
+			type:'inline',
+			items: {
+				src: '#edit-popup'
+			},
+		});
+	}
+	
+	bkLib.onDomLoaded(nicEditors.allTextAreas);
+
+	$("#setups .list-item input").on('change', function() {
+		var j = JSON.parse($(this).val())
+		var varselector = '#'+	$.escapeSelector(this.attributes.for.value);
+		$.ajax({
+			type: 'POST',
+			url: '{{ajax_variables}}',
+			data: j.db,
+			dataType: "json",
+			async:false,
+			success: function(data, status){
+				console.log(data, status);
+				
+				$(varselector).empty();
+				$.each(data, function(i, item) {
+					$(varselector).append('<option value="{' + item + '}">' + item + '</option>');
+				});
+			},
+		});
+	}).trigger('change');
+	
+	$(".dynamiclist").dynamiclist({
+		minSize:0,
+		addCallbackFn: function(){
+			console.log('added line');
+			nicEditors.allTextAreas
+			getjoins();
+			$("#jointables .list-item select").on('change',function() {
+				getfilters();
+			}).trigger('change');
+		}
+	});
+</script>
+{{ footer }}

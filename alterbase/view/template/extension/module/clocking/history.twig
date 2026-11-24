@@ -1,0 +1,118 @@
+{{ header }}{{ column_left }}
+
+<div id="content">
+	<div class="page-header">
+		<div class="container-fluid">
+			<h1><i class="fa {{ heading_icon }}"></i>&nbsp;{{ heading_title }}</h1><br>
+			<ul class="breadcrumb">
+				{% for breadcrumb in breadcrumbs %}
+				<li><a href="{{ breadcrumb.href }}">{{ breadcrumb.text }}</a></li>
+				{% endfor %}
+			</ul>
+		</div>
+	</div>
+	<div class="container-fluid">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">{{ text_report }}<h3>
+			</div>
+			<div class="panel-body">
+				<table id="historytable" class="display" style="width:100%">
+					<thead>
+						<tr>
+							{% for col in columns %}
+								<th>{{col.text}}</th>
+							{% endfor %}
+						</tr>
+						<tr class="reduced column_search">
+							{% for col in columns %}							
+								{% if col.search == 'select' %}
+									<th style="padding: 0px; position: relative;">
+										<select class="form-control">
+											<option value="">All</option>
+											{% for opt in col.options %}
+												<option value="{{opt[col.optionskey]}}">{{opt[col.optionskey]}}</option>
+											{% endfor %}
+										</select>
+									</th>
+								{% else %}
+									<th style="padding: 0px; position: relative;">
+										<input type="search" class="form-control {{col.search}}">
+									</th>
+								{% endif %}
+							{% endfor %}
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+	$(document).ready(function() {
+		$('.daterange').each(function(){
+			$(this).after('<i style="position: absolute; bottom: 10px; right: 24px; top: auto;" class="far fa-calendar-alt"></i>');
+			$(this).daterangepicker(
+				{
+					"showDropdowns": true,
+					"showWeekNumbers": true,
+					"ranges": {
+						'Today':		[moment(), moment()],
+						'Yesterday':	[moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+						'Last 7 Days':	[moment().subtract(6, 'days'), moment()],
+						'Last 30 Days':	[moment().subtract(29, 'days'), moment()],
+						'This Month':	[moment().startOf('month'), moment().endOf('month')],
+						'Last Month':	[moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+						'This Year':	[moment().startOf('year'), moment().endOf('year')]
+					},
+					"locale": {
+						"format": "DD/MM/YYYY",
+					},
+					"showCustomRangeLabel": false,
+					"alwaysShowCalendars": true,
+					"startDate": moment().startOf('year'),
+					"endDate": moment().endOf('year'),
+					"opens": "left",
+				},
+				function(start, end, label) {
+					console.log('New date range selected: ' + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD') + ' (predefined range: ' + label + ')');
+				}
+			);
+		});
+		var dtable = $('#historytable').DataTable( {
+			language: { searchPlaceholder: "Search All" },
+			processing: true,
+			serverSide: true,
+			orderCellsTop: true,
+			fixedHeader: true,
+			responsive: true,
+			stateSave: true,
+			pageLength: 50,
+			lengthMenu: [ [ 10, 50, 100, 200, 500,-1 ], [ 10, 50, 100, 200, 500, "ALL"] ],
+			ajax: {
+				url: "{{ ajax_route }}",
+			},
+		});
+		// Restore state
+		dtable.columns().eq( 0 ).each( function ( colIdx ) {
+			if(dtable.state.loaded()){
+				var colSearch = dtable.state.loaded().columns[colIdx].search;
+				if ( colSearch.search ) {
+					$("#historytable tr.column_search  th:nth-child("+(colIdx+1)+")  input" ).val( colSearch.search );
+				}
+			}
+			$("#historytable tr.column_search > th:nth-child("+(colIdx+1)+")  input, #historytable tr.column_search > th:nth-child("+(colIdx+1)+")  select" )
+				.each( function () {
+					dtable.column( $(this).parent().index() ).search(this.value.replace(/;/g, "|"), true, false);
+				})
+				.on( 'keyup change search', function () {
+					dtable.column( $(this).parent().index() ).search(this.value.replace(/;/g, "|"), true, false).draw();
+				});
+		});
+		dtable.draw();
+		
+	});
+</script>
+{{ footer }}
+
