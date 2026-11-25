@@ -29,6 +29,10 @@ class ControllerExtensionMRPproduct extends Controller
 		$data['new'] = $this->url->link('extension/MRP/product/view','user_token=' . $this->session->data['user_token'], true);
 	// DATA	
 		$data['fields']		= $this->model_extension_MRP_MRPproduct->getTableCustomColumns();
+		$data['productlist_mtime'] = filemtime(DIR_TEMPLATE . 'extension/MRP/productlist.twig');
+		if ($data['productlist_mtime'] === false) {
+			throw new RuntimeException('Unable to read product list template modification time');
+		}
 		
 		$data['viewpath'] = $this->url->link('extension/MRP/product/view',	'user_token=' . $this->session->data['user_token'], true);
 		$data['ajax_route'] = 'index.php?route=extension/MRP/product/getTable&user_token=' . $this->session->data['user_token'];

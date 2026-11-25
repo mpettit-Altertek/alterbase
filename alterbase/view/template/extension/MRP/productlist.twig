@@ -101,6 +101,16 @@
 			fixedHeader: true,
 			responsive: true,
 			stateSave: true,
+			stateLoadParams: function (settings, state) {
+				if (state.time < {{ productlist_mtime }} * 1000) {
+					try {
+						localStorage.removeItem('DataTables_' + settings.sInstance + '_' + location.pathname);
+					} catch (error) {
+						console.warn('Unable to clear outdated product table state', error);
+					}
+					return false;
+				}
+			},
 			pageLength: 100,
 			lengthMenu: [ [ 10, 50, 100, 200, 500,-1 ], [ 10, 50, 100, 200, 500, "ALL"] ],
 			ajax: {
